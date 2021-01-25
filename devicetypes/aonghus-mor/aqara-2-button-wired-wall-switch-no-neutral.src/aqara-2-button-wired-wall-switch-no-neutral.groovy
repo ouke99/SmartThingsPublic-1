@@ -19,25 +19,24 @@
  *  13.08.2019 modified by @aonghus-mor to recognize whether each switch is wired and to allow the unwired switch to behave as a button or toggle
  *  12.10.2019 modified by @aonghus-mor to reorganise the main app screen to make each switch have equal weight.  Added button2 as a response to both switches being pressed simultaneously,
  *	01.01.2020 modified by @aonghus-mor to work with the new Smartthings App.  Although it works the interface in the new App needs some work.
- *  30.04.2020 modified by @aonghus-mor to add fuctionality for the single gang switch QBKG04LM.  Renamed to reflect this.   Minor changes to Temperature treatment.
- *  12.05.2020 modified by @aonghus-mor to work with the new smartthings app.
-*/
+ */
  
 import groovy.json.JsonOutput
 import physicalgraph.zigbee.zcl.DataType
 
 metadata {
+    //definition (name: "Aqara 2 Button Wired Wall Switch No Neutral", namespace: "simic", author: "simic") 
     definition (name: "Aqara 2 Button Wired Wall Switch No Neutral", namespace: "aonghus-mor", author: "aonghus-mor", 
-    			 mnmn: "LUMI", vid: "generic-switch", ocfDeviceType: "oic.d.switch")
+    			 mnmn: "LUMI", vid: "Xiaomi-QBKG03LM", ocfDeviceType: "x.com.st.d.remotecontroller")
     {
-    // mnmn: "SmartThings", vid: "SmartThings-smartthings-Xiaomi-QBKG03LM", minHubCoreVersion: "000.028.00012", ocfDeviceType: "x.com.st.d.remotecontroller"
+    // mnmn: "SmartThings", vid: "SmartThings-smartthings-Xiaomi-QBKG03LM", minHubCoreVersion: "000.028.00012"
         capability "Actuator"
         capability "Configuration"
         capability "Refresh"
         capability "Switch"
-        capability "Momentary"
-        capability "Button"
         capability "Temperature Measurement"
+        capability "Button"
+        capability "Momentary"
         capability "Health Check"
         
         command "on2"
@@ -49,23 +48,15 @@ metadata {
         command "leftButtonPush"
         command "rightButtonPush"
         
-        
-        attribute "switch","ENUM", ["on","off", "turningOn", "turningOff", "held", "released", "pushed"]
-        //attribute "switch", "ENUM"
-        attribute "switch2","ENUM", ["on","off", "turningOn", "turningOff", "held", "released", "pushed", "hidden"]
+        attribute "switch1","ENUM", ["on","off"]
+        attribute "switch2","ENUM", ["on","off"]
         attribute "lastCheckin", "string"
         attribute "lastPressType", "enum", ["soft","hard","both","held","released","refresh"]
-        attribute "momentary", "ENUM", ["Pressed", "Standby"]
-        attribute "button", "ENUM", ["Pressed", "Held", "Standby"]
-        //attribute "tempOffset", "number"
         
         fingerprint profileId: "0104", deviceId: "0051", inClusters: "0000,0001,0002,0003,0004,0005,0006,0010,000A", outClusters: "0019,000A", 
         		manufacturer: "LUMI", model: "lumi.ctrl_neutral2", deviceJoinName: "Aqara Switch QBKG03LM"
-        fingerprint profileId: "0104", deviceId: "0051", inClusters: "0000,0003,0001,0002,0019,000A", outClusters: "0000,000A,0019", 
-                manufacturer: "LUMI", model: "lumi.ctrl_neutral1", deviceJoinName: "Aqara Switch QBKG04LM"
     }
-	
-    
+
     // simulator metadata
     /*
     simulator {
@@ -111,9 +102,7 @@ metadata {
         }
         */
         
-       
-        
-        standardTile("switch", "device.switch", width: 3, height: 3, canChangeIcon: false) 
+        standardTile("switch1", "device.switch1", width: 3, height: 3, canChangeIcon: false) 
         {
 			state "off", label: '${name}', action: "on1", icon: "st.switches.light.off", backgroundColor: "#ffffff", nextState: "turningOn"
 			state "on", label: '${name}', action: "off1", icon: "st.switches.light.on", backgroundColor: "#79b821", nextState: "turningOff"
@@ -135,24 +124,12 @@ metadata {
             state "turningOff", label:'${name}', action:"on2", icon:"st.switches.light.off", backgroundColor:"#ffffff", nextState:"off"
             state "held", label:'${name}', backgroundColor:"#ff0000",
             		icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png"
-            state "released", label:'${name}', action: "on2", backgroundColor:"#ffffff", nextState: "pushed",
+            state "released", label:'${name}', action: "rightButtonPush", backgroundColor:"#ffffff", nextState: "pushed",
             		icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonReleased.png"
-            state "pushed", label:'${name}', backgroundColor:"#008800", 
-            		icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png"
-           	state "hidden", label:'', backgroundColor: "#FFFFFF", icon:""
-		}
-		/*
-        standardTile("button", "device.button", width: 3, height: 3, canChangeIcon: false) 
-        {
-			state "off", label: '${name}', action: "on1", icon: "st.switches.light.off", backgroundColor: "#ffffff", nextState: "turningOn"
-            state "held", label:'${name}', backgroundColor:"#ff0000",
-            		icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png"
-            //state "released", label:'${name}', action:"leftButtonPush", backgroundColor:"#ffffff", nextState: "pushed",
-            //		icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonReleased.png"
             state "pushed", label:'${name}', backgroundColor:"#008800", 
             		icon:"https://raw.githubusercontent.com/bspranger/Xiaomi/master/images/ButtonPushed.png"	
 		}
-       */
+	
         valueTile("temperature", "device.temperature", width: 2, height: 2) 
         {
 			state("temperature", label:'${currentValue}°',
@@ -187,10 +164,8 @@ metadata {
         valueTile("spacer1", "spacer1", decoration: "flat", inactiveLabel: false, width: 1, height: 2) {state "default", label:''}
         valueTile("spacer2", "spacer2", decoration: "flat", inactiveLabel: false, width: 2, height: 2) {state "default", label:''}
         valueTile("lastcheckin", "device.lastCheckin", inactiveLabel: false, decoration:"flat", width: 4, height: 2) {
-            state "lastcheckin", label:'Last Event:\n ${currentValue}'}
-        valueTile("deprecated", "deprecated", inactiveLabel: false, decoration:"flat", width: 6, height: 2) {
-            state "default", label:"This device handler is no longer maintained. Please replace it by 'Aqara Wall Switch No Neutral'"
-            }
+            state "lastcheckin", label:'Last Event:\n ${currentValue}'
+        }
         /*
         if ( state != null && state.batteryPresent )
         {
@@ -208,21 +183,18 @@ metadata {
 		}
         */	
         
-        main (["switch", "switch2"])
-        details(["deprecated", "switch", /* "switch1",*/ "switch2", "temperature", "spacer2", "refresh", "spacer1", "lastcheckin", "spacer1" /*, "battery"*/])
+        //main ("switch")
+        details([/*"switch",*/ "switch1", "switch2", "temperature", "spacer2", "refresh", "spacer1", "lastcheckin", "spacer1" /*, "battery"*/])
     }
- 
     preferences 
     {
     	input name: "unwiredSwitch", type: "enum", options: ['None', 'Left', 'Right'], title: "Identify the unwired switch", 
-        							defaultValue: 'None', displayDuringSetup: true
-        input name: "tempOffset", type: "decimal", title:"Temperature Offset", 
-        							description:"Adjust temperature by this many degrees", range:"*..*", defaultValue: 0                          
+        							required: true, displayDuringSetup: true
+        input name: "tempOffset", type: "decimal", title:"Temperature Offset", description:"Adjust temperature by this many degrees", range:"*..*", defaultValue: 0                          
         input name: "infoLogging", type: "bool", title: "Display info log messages?", defaultValue: true
 		input name: "debugLogging", type: "bool", title: "Display debug log messages?"
     }
 }
-
 
 // Parse incoming device messages to generate events
 def parse(String description)
@@ -297,7 +269,7 @@ private def parseFlags()
     	case "held":
         	if ( state.sw1 != null )
     		{
-            	events << createEvent(name: 'switch', value: 'held' )
+            	events << createEvent(name: 'switch1', value: 'held' )
             	if ( state.unwired == "Left" )
                 	events << createEvent(name: 'button', value: 'held', data:[buttonNumber: 1], isStateChange: true)
                 displayInfoLog('Left switch held.')
@@ -315,7 +287,7 @@ private def parseFlags()
          case "released":
          	if ( state.sw1 != null )
             {
-            	events << createEvent(name: 'switch', value: 'released' )
+            	events << createEvent(name: 'switch1', value: 'released' )
     		}
             else if ( state.sw2 != null )
             {
@@ -341,7 +313,7 @@ private def parseFlags()
                 }
                 else
     			{
-                	events << createEvent(name: 'switch', value: state.sw1 )
+                	events << createEvent(name: 'switch1', value: state.sw1 )
                 }
                 displayInfoLog('Left switch pushed.')
             }
@@ -388,16 +360,14 @@ def clearButtonStatus()
 def clearLeftButtonStatus()
 {
 	displayDebugLog( "Clearing Left Button Status" )
-	sendEvent(name: 'switch', value: state.final, isStateChange: true)
-    //sendEvent(name: 'switch', value: 'off', isStateChange: true)
+	sendEvent(name: 'switch1', value: 'released', isStateChange: true)
     clearFlags()
-    state.final = 'released'
 }
 
 def clearRightButtonStatus()
 {
     displayDebugLog( "Clearing Right Button Status" )
-    sendEvent(name: 'switch2', value: ( state.unwired == 'Right' ? 'released' : 'off' ), isStateChange: true)
+    sendEvent(name: 'switch2', value: 'released', isStateChange: true)
     clearFlags()
 }
 
@@ -419,27 +389,17 @@ def doButtonPush(sw)
 def leftButtonPush()
 {
 	 displayDebugLog("left button pushed " + showFlags())
-     if ( state.unwired == 'Left' )
-     { 
-     	doButtonPush('switch')
-     	state.lastPressType = "soft"
-	 	runIn(1, clearLeftButtonStatus)
-     }
-     else
-     	on1()
+     doButtonPush('switch1')
+     state.lastPressType = "soft"
+	 runIn(1, clearLeftButtonStatus)
 }   
 
 def rightButtonPush()
 {
-	displayDebugLog("right button pushed " + showFlags())
-	if ( state.unwired == 'Right' )
-    { 
-     	doButtonPush('switch2')
-     	state.lastPressType = "soft"
-	 	runIn(1, clearRightButtonStatus)
-	}
-    else
-    	on2()
+	 displayDebugLog("right button pushed " + showFlags())
+     doButtonPush('switch2')
+     state.lastPressType = "soft"
+	 runIn(1, clearRightButtonStatus)
 }  
 
 private def clearFlags()
@@ -465,20 +425,29 @@ private def parseCatchAllMessage(String description)
                 displayDebugLog( "Map: " + dtMap )
                 if ( state.unwired == null )
                 	state.unwired = unwiredSwitch
-                //if ( dtMap.get(110) == 0x0002 )
-                //	state.unwired = 'Left'
-                //if ( dtMap.get(111) == 0x0002)
-                //	state.unwired = 'Right'
+                if ( dtMap.get(110) == 0x0002 )
+                	state.unwired = 'Left'
+                if ( dtMap.get(111) == 0x0002)
+                	state.unwired = 'Right'
                 if ( state.unwired != 'None' && !state.numButtons )
-                	getNumButtons()
-                event = setTemp( dtMap.get(3) )
-                if ( state.numButtons == 2 )
                 {
-                	displayInfoLog( "Unwired Switch is ${state.unwired}" )
-                	displayInfoLog( "Switches are (" + (dtMap.get(100) ? "on" : "off") + "," + (dtMap.get(101) ? "on" : "off") +")" )
+                	state.numButtons = 2
+                    sendEvent(name: 'numberOfButtons', value: state.numButtons, displayed: false )
+      				displayDebugLog( "Setting Number of Buttons to " + state.numButtons )
                 }
-                else
-                	displayInfoLog( "Switch is " + (dtMap.get(100) ? "on" : "off") )
+                def temp = dtMap.get(3)
+                if ( state.tempNow != temp )
+                {
+                	state.tempNow = temp
+                    if ( getTemperatureScale() != "C" ) 
+                    	temp = celsiusToFahrenheit(temp)
+                	state.tempNow2 = temp + tempOffset      
+                	event = createEvent(name: "temperature", value: state.tempNow2, unit: getTemperatureScale())
+                    displayDebugLog("Temperature updated.")
+            	}
+                displayInfoLog( "Unwired Switch is ${state.unwired}" )
+                displayInfoLog( "Switches are (" + (dtMap.get(100) ? "on" : "off") + "," + (dtMap.get(101) ? "on" : "off") +")" )
+                displayInfoLog( "Temperature is now ${state.tempNow2}°" )
             }
         	break
         case 0x0006: 	
@@ -496,27 +465,6 @@ private def parseCatchAllMessage(String description)
     		}
     }
      return event
-}
-
-private setTemp(int temp)
-{ 
-    def event = null
-    //tempOffset = tempOffset == null ? 0 : tempOffset
-    if ( state.tempNow != temp || state.tempOffset != tempOffset )
-    {
-      	state.tempNow = temp
-        state.tempOffset = tempOffset
-        if ( getTemperatureScale() != "C" ) 
-            temp = celsiusToFahrenheit(temp)
-        log.debug "${temp} - ${tempOffset}"
-        state.tempNow2 = temp + ( state.tempOffset == null ? 0 : tempOffset )      
-        event = createEvent(name: "temperature", value: state.tempNow2, unit: getTemperatureScale())
-        displayDebugLog("Temperature is now ${state.tempNow2}°")          	
-	}
-    //state.lastTempTime = (new Date()).time
-    //state.tempCheck = state.tempCheck == null ? true : ( state.tempNow == temp ) && state.tempCheck
-    //displayDebugLog( "Temperature Check: ${state.tempCheck}" )
-    return event
 }
 
 private def parseReportAttributeMessage(String description) 
@@ -541,8 +489,16 @@ private def parseReportAttributeMessage(String description)
 				event = getBatteryResult(convertHexToInt(descMap.value / 2))
             break
  		case "0002": // temperature
-        	if ( descMap.attrId == '0000' ) 
-            	event = setTemp( convertHexToInt(descMap.value) )
+        	if ( descMap.attrId == "0000") 
+            {
+    			def temp = convertHexToInt(descMap.value)
+        		if ( getTemperatureScale() != "C" ) temp = celsiusToFahrenheit(temp)
+				event = createEvent(name: "temperature", value: temp, unit: getTemperatureScale())
+				displayDebugLog( "Temperature Hex convert to ${temp}°" )
+                state.lastTempTime = (new Date()).time
+                state.tempCheck = state.tempCheck == null ? true : ( state.tempNow == temp ) && state.tempCheck
+                displayDebugLog( "Temperature Check: ${state.tempCheck}" )
+            }
             break
  		case "0006":  //button press
         	parseSwitchOnOff(descMap)
@@ -595,9 +551,7 @@ private def parseCustomMessage(String description)
 
 def on() 
 {
-    displayDebugLog("on()")
-    state.final = 'off'
-    def cmd = on1()
+    def cmd = on()
     cmd
 }
 
@@ -606,10 +560,10 @@ def on1()
     displayDebugLog( "on1()" )
 	if ( state.unwired == 'Left' )
     {	
-        leftButtonPush()
+    	leftButtonPush()
         return []
     }
-    sendEvent(name: "switch", value: "on")
+    sendEvent(name: "switch1", value: "on")
 	def cmd = zigbee.command(0x0006, 0x01, "", [destEndpoint: 0x02] )
     displayDebugLog( cmd )
     cmd 
@@ -619,8 +573,7 @@ def on2()
 {
    	displayDebugLog( "on2()" )
 	if ( state.unwired == 'Right' )
-    {	
-    	rightButtonPush()
+    {	leftButtonPush()
         return []
     }
     sendEvent(name: "switch2", value: "on")
@@ -632,9 +585,7 @@ def on2()
 
 def off() 
 {
-	displayDebugLog("off()")
-    state.final = 'off'
-    def cmd = off1()
+	def cmd = off1()
     cmd
 }
 
@@ -646,7 +597,7 @@ def off1()
     	leftButtonPush()
         return []
     }
-    sendEvent(name: "switch", value: "off")
+    sendEvent(name: "switch1", value: "off")
     def cmd = zigbee.command(0x0006, 0x00, "", [destEndpoint: 0x02] )
     displayDebugLog( cmd )
     cmd
@@ -656,7 +607,7 @@ def off2()
 {
     displayDebugLog( "off2()" )
 	if ( state.unwired == 'Right' )
-    {	rightButtonPush()
+    {	leftButtonPush()
         return []
     }
     sendEvent(name: "switch2", value: "off")
@@ -664,19 +615,6 @@ def off2()
     def cmd = zigbee.command(0x0006, 0x00, "", [destEndpoint: 0x03] )
     displayDebugLog( cmd )
     cmd
-}
-
-def push()
-{
-	displayDebugLog("Momentary pushed: ")
-	if ( state.unwired == 'Right' )
-    {	
-    	rightButtonPush()
-        return []
-    }
-    def cmd = zigbee.command(0x0006, 0x02, "", [destEndpoint: ( state.numSwitches == 1 ? 0x02 : 0x03 )] )
-    displayDebugLog( cmd )
-    cmd  
 }
 
 def refresh() 
@@ -689,67 +627,24 @@ def refresh()
     state.unwired = unwiredSwitch
     state.tempNow = state.tempNow == null ? 0 : state.tempNow
     state.tempNow2 = state.tempNow2 == null ? 0 : state.tempNow2
-    state.tempOffset = state.tempOffset == null ? 0 : state.tempOffset 
-    state.final = 'released'
-    getNumButtons()
-    if ( state.numSwitches == 1 )
-    	sendEvent(name: 'switch2', value: 'hidden', isStateChange: true)
-    if ( state.unwired != "None" )
-    	sendEvent(name: 'supportedButtonValues', value: ['pushed', 'held'], isStateChange: true)
     //def cmds = zigbee.configureReporting(0x0002, 0x0000, 0x29, 1800, 7200, 0x01)
-    //def cmds = zigbee.readAttribute(0x0006,0,[destEndpoint: 0x01] ) + 
-    //			zigbee.readAttribute(0x0006,0,[destEndpoint: 0x02] ) + 
-    //         	zigbee.readAttribute(0x0006,0,[destEndpoint: 0x03] ) +
-    //    		zigbee.readAttribute(0x0006,0,[destEndpoint: 0x04] ) + 
-    //         	zigbee.readAttribute(0x0006,0,[destEndpoint: 0x05] )
+    def cmds = zigbee.readAttribute(0x0006,0,[destEndpoint: 0x01] ) + 
+    			zigbee.readAttribute(0x0006,0,[destEndpoint: 0x02] ) + 
+             	zigbee.readAttribute(0x0006,0,[destEndpoint: 0x03] ) +
+        		zigbee.readAttribute(0x0006,0,[destEndpoint: 0x04] ) + 
+             	zigbee.readAttribute(0x0006,0,[destEndpoint: 0x05] )
         
-    def cmds = zigbee.readAttribute(0x0002, 0) + 
-           		zigbee.readAttribute(0x0000, 0x0007)
-           
+    cmds += zigbee.readAttribute(0x0002, 0) + 
+           zigbee.readAttribute(0x0000, 0x0007)
     //if ( state.batteryPresent )
-    //	cmds += zigbee.readAttribute(0x0001, 0) //+ zigbee.readAttribute(0x0001,0x0001) + zigbee.readAttribute(0x0001,0x0002)
+    	cmds += zigbee.readAttribute(0x0001, 0) //+ zigbee.readAttribute(0x0001,0x0001) + zigbee.readAttribute(0x0001,0x0002)
                 
      //cmds += zigbee.configureReporting(0x0000, 0, 0x29, 1800,7200,0x01)
     
      displayDebugLog( cmds )
-     //updated()
+     updated()
      
      cmds
-}
-
-def installed()
-{
-	refresh()
-}
-
-def configure()
-{
-	refresh()
-}
-
-def updated()
-{
-	refresh()
-}
-
-private getNumButtons()
-{
-	String model = device.getDataValue("model")
-    switch ( model ) 
-    {
-    	case "lumi.ctrl_neutral1":
-        	state.numSwitches = 1
-     		state.numButtons = 0  
-            break
-        case "lumi.ctrl_neutral2":
-        	state.numSwitches = 2
-        	state.numButtons = 2
-            break
-        default:
-        	displayDebugLog("Unknown device model: " + model)
-    }
-    sendEvent(name: 'numberOfButtons', value: state.numButtons, displayed: false )
-    displayDebugLog( "Setting Number of Buttons to " + state.numButtons )
 }
 
 private Integer convertHexToInt(hex) 
